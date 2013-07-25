@@ -139,9 +139,57 @@ class LDAPObject(RecordableMethods):
         """
         self.bound_as = None
 
+    @recorded
+    def modify_s(self, dn, record):
+        """
+        """
+        return self._modify_s(dn, record)
+
+    @recorded
+    def modify_ext_s(self, dn, record, serverctrls=None, clientctrls=None):
+        """
+        """
+        return self._modify_ext_s(dn, record, serverctrls, clientctrls)
+
+    @recorded
+    def delete_s(self, dn):
+        """
+        """
+        return self._delete_s(dn)
+
     #
     # Internal implementations
     #
+
+    def _value_as(self, value):
+        if not isinstance(value, list):
+            return [value]
+        return value
+
+    def _delete_s(self, dn):
+        dn = str(dn)
+        try:
+            del self.directory[dn]
+        except KeyError:
+            return (105, [], len(self.methods_called()), [])
+
+    def _modify_s(self, dn, record):
+        dn = str(dn)
+        try:
+            for item in record:
+                val = None if item[2] is None else self._value_as(item[2])
+                self.directory[dn][item[1]]=val
+        except KeyError:
+            return (105, [], len(self.methods_called()), [])
+
+    def _modify_ext_s(self, dn, record, serverctrls, clientctrls):
+        dn = str(dn)
+        try:
+            for item in record:
+                val = None if item[2] is None else self._value_as(item[2])
+                self.directory[dn][item[1]]=val
+        except KeyError:
+            return (105, [], len(self.methods_called()), [])
 
     def _compare_s(self, dn, attr, value):
         if dn not in self.directory:
@@ -207,7 +255,7 @@ class LDAPObject(RecordableMethods):
         entry = {}
         dn = str(dn)
         for item in record:
-            entry[item[0]] = list(item[1])
+            entry[item[0]] = self._value_as(item[1])
         try:
             self.directory[dn]
             raise ldap.ALREADY_EXISTS
