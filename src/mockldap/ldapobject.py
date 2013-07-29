@@ -166,32 +166,43 @@ class LDAPObject(RecordableMethods):
             return [value]
         return value
 
+    def _dn(self, dn):
+        return str(dn).lower()
+
     def _delete_s(self, dn):
-        dn = str(dn)
+        dn = self._dn(dn)
         try:
             del self.directory[dn]
         except KeyError:
             return (105, [], len(self.methods_called()), [])
 
     def _modify_s(self, dn, record):
-        dn = str(dn)
-        try:
-            for item in record:
-                val = None if item[2] is None else self._value_as(item[2])
-                self.directory[dn][item[1]]=val
-        except KeyError:
-            return (105, [], len(self.methods_called()), [])
+        self._modify_ext_s(dn=dn, record=record, serverctrls=None, clientctrls=None)
 
     def _modify_ext_s(self, dn, record, serverctrls, clientctrls):
-        dn = str(dn)
-        try:
-            for item in record:
-                val = None if item[2] is None else self._value_as(item[2])
-                self.directory[dn][item[1]]=val
-        except KeyError:
-            return (105, [], len(self.methods_called()), [])
+        dn = self._dn(dn)
+        for item in record:
+            val = [] if item[2] is None else self._value_as(item[2])
+            self.directory.setdefault(dn, {})
+            self.directory[dn].setdefault(item[1], [])
+            if item[0] == ldap.MOD_ADD:
+                self.directory[dn][item[1]] += val
+            elif item[0] == ldap.MOD_DELETE:
+                index = self.directory[dn][item[1]].index(val)
+                if val is None:
+                    self.directory[dn][item[1]] = []
+                else:
+                    del self.directory[dn][item[1]][index]
+            elif item[0] == ldap.MOD_REPLACE:
+                try:
+                    index = self.directory[dn][item[1]].index(val)
+                    self.directory[dn][item[1]][index] = val
+                except ValueError:
+                    self.directory[dn][item[1]] = val
+            else: raise Exception("Unknown LDAP operation")
 
     def _compare_s(self, dn, attr, value):
+        dn = self._dn(dn)
         if dn not in self.directory:
             raise ldap.NO_SUCH_OBJECT
 
@@ -252,8 +263,8 @@ class LDAPObject(RecordableMethods):
         return results
 
     def _add_s(self, dn, record):
+        dn = self._dn(dn)
         entry = {}
-        dn = str(dn)
         for item in record:
             entry[item[0]] = self._value_as(item[1])
         try:
