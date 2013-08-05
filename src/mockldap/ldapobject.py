@@ -188,11 +188,12 @@ class LDAPObject(RecordableMethods):
             if item[0] == ldap.MOD_ADD:
                 self.directory[dn][item[1]] += val
             elif item[0] == ldap.MOD_DELETE:
-                index = self.directory[dn][item[1]].index(val)
-                if val is None:
-                    self.directory[dn][item[1]] = []
-                else:
-                    del self.directory[dn][item[1]][index]
+                for record in val:
+                    index = self.directory[dn][item[1]].index(record)
+                    if record is None:
+                        self.directory[dn][item[1]] = []
+                    else:
+                        del self.directory[dn][item[1]][index]
             elif item[0] == ldap.MOD_REPLACE:
                 try:
                     index = self.directory[dn][item[1]].index(val)
