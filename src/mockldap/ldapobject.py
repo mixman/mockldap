@@ -181,11 +181,14 @@ class LDAPObject(RecordableMethods):
 
     def _modify_ext_s(self, dn, record, serverctrls, clientctrls):
         dn = self._dn(dn)
+        post_delete = [] # on MOD_DELETE, after all operations, if empty list left: del.
         for item in record:
             val = [] if item[2] is None else self._value_as(item[2])
             self.directory.setdefault(dn, {})
             self.directory[dn].setdefault(item[1], [])
             if item[0] == ldap.MOD_ADD:
+                if val[0] in self.directory[dn][item[1]]:
+                    raise ldap.TYPE_OR_VALUE_EXISTS
                 self.directory[dn][item[1]] += val
             elif item[0] == ldap.MOD_DELETE:
                 if val:
@@ -197,6 +200,7 @@ class LDAPObject(RecordableMethods):
                             del self.directory[dn][item[1]][index]
                 else:
                     self.directory[dn][item[1]] = []
+                post_delete.append([dn,item[1]])
             elif item[0] == ldap.MOD_REPLACE:
                 try:
                     index = self.directory[dn][item[1]].index(val)
@@ -204,6 +208,9 @@ class LDAPObject(RecordableMethods):
                 except ValueError:
                     self.directory[dn][item[1]] = val
             else: raise Exception("Unknown LDAP operation")
+        for dn,key in post_delete:
+            if not self.directory[dn][key]:
+                del self.directory[dn][key]
 
     def _compare_s(self, dn, attr, value):
         dn = self._dn(dn)
