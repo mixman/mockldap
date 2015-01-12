@@ -256,9 +256,10 @@ class LDAPObject(RecordableMethods):
                 results.append((dn, new_attrs))
 
         results = []
+        base_dn = self._dn(base)
         all_dn = self.directory.keys()
         if scope == ldap.SCOPE_BASE:
-            check_dn(base, all_dn)
+            check_dn(base_dn, all_dn)
             get_results(base, filterstr, results)
         elif scope == ldap.SCOPE_ONELEVEL:
             for dn in all_dn:
