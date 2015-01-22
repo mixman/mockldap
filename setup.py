@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name='mockldap-fork',
-    version='0.1.4',
+    version='0.1.5',
     description=u"Mockldap fork, A simple mock implementation of python-ldap.",
     long_description=open('README').read(),
     url='http://bitbucket.org/psagers/mockldap/',
