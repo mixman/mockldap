@@ -3,7 +3,7 @@
 from setuptools import setup
 
 setup(
-    name='mockldap-fork',
+    name='mockldap',
     version='0.1.4',
     description=u"Mockldap fork, A simple mock implementation of python-ldap.",
     long_description=open('README').read(),
