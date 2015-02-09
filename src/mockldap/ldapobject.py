@@ -193,10 +193,21 @@ class LDAPObject(RecordableMethods):
             elif item[0] == ldap.MOD_DELETE:
                 if val:
                     for record in val:
-                        index = self.directory[dn][item[1]].index(record)
+                        try:
+                            pn = self.directory[dn]
+                        except KeyError:
+                            raise ldap.NO_SUCH_OBJECT
+                        try:
+                            pitem = pn[item[1]]
+                        except KeyError:
+                            raise ldap.NO_SUCH_OBJECT
                         if record is None:
                             self.directory[dn][item[1]] = []
                         else:
+                            try:
+                                index = pitem.index(record)
+                            except ValueError:
+                                raise ldap.NO_SUCH_ATTRIBUTE
                             del self.directory[dn][item[1]][index]
                 else:
                     self.directory[dn][item[1]] = []
